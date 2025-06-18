@@ -1,10 +1,9 @@
 #include "cpu.h"
-#include <iostream>
 
 int main()
 {
     CPU cpu;
-    cpu.cycle();
+    cpu.reset();
     cpu.printReg();
 
     return 0;

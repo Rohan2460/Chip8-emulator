@@ -31,7 +31,6 @@ void update()
 
 int init(int argc, char *argv[])
 {
-
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
         return 2;
@@ -54,7 +53,6 @@ int init(int argc, char *argv[])
                 break;
             }
         }
-
         update();
     }
 

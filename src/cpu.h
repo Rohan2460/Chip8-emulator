@@ -5,7 +5,8 @@ class CPU
 {
 	using byte_t = uint8_t; 
 	
-	byte_t   memory[4096];
+	bool video[64][32];
+	byte_t memory[4096];
 	uint16_t stack[16];
 
 	struct Registers
@@ -17,12 +18,11 @@ class CPU
 	} reg;
 
 public:
-	static bool video[64][32];
 
 	CPU();
 	void reset();
 	void printReg();
 	void cycle();
 	void dispatch(uint16_t& opcode);
-	void CPU::push(uint16_t item);
+	void push(uint16_t item);
 };

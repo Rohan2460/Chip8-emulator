@@ -1,17 +1,28 @@
+#include "gui.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <iostream>
 
-static SDL_Window *window = NULL;
-static SDL_Renderer *renderer = NULL;
+SDL_Window* GUI::window = nullptr;
+SDL_Renderer* GUI::renderer = nullptr;
 
-constexpr int WIDTH {640};
-constexpr int HEIGHT {320};
 
-constexpr int pixelWidth {WIDTH / 64};
-constexpr int pixelHeight {HEIGHT / 32};
+int GUI::init(const char* title)
+{
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
+        return 2;
+    }
 
-void update()
+    if (!SDL_CreateWindowAndRenderer(title, WIDTH, HEIGHT, 0, &window, &renderer)) {
+        SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
+        return 2;
+    }
+
+    return 0;
+}
+
+void GUI::update()
 {
     const double now = ((double)SDL_GetTicks()) / 1000.0;
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
@@ -29,36 +40,26 @@ void update()
 
 }
 
-int init(int argc, char *argv[])
+bool GUI::events()
 {
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
-        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
-        return 2;
-    }
-
-    if (!SDL_CreateWindowAndRenderer("chip8 emulator", WIDTH, HEIGHT, 0, &window, &renderer)) {
-        SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
-        return 2;
-    }
-
     bool quit {false};
-    while (!quit)
+    SDL_Event event;
+
+    while (SDL_PollEvent(&event))
     {
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
+        if (event.type == SDL_EVENT_QUIT)
         {
-            if (event.type == SDL_EVENT_QUIT)
-            {
-                quit = true;
-                break;
-            }
+            quit = true;
+            break;
         }
-        update();
     }
 
+    return quit;
+}
+
+void GUI::quit()
+{
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
-
-    return 0;
 }

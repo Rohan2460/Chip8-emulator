@@ -20,8 +20,8 @@ void CPU::reset()
 	}
 
 	// Debug
-	memory[reg.PC] = 0x13;
-	memory[reg.PC + 1] = 0x33;
+	memory[reg.PC] = 0x00;
+	memory[reg.PC + 1] = 0xE0;
 
 }
 
@@ -68,7 +68,8 @@ void CPU::dispatch(uint16_t& opcode)
 		case 0:
 			memset(video, 0, sizeof(video));
 			break;
-
+		
+		// RET
 		case 0xE:
 			reg.PC = stack[reg.SP];
 			reg.SP--;
@@ -137,6 +138,7 @@ void CPU::dispatch(uint16_t& opcode)
 
 		// add 
 		case 4:
+		{
 			uint16_t res = reg.VX[x] + reg.VX[y];
 			reg.VX[x] = res;
 			if (res > 0xFF)
@@ -144,9 +146,11 @@ void CPU::dispatch(uint16_t& opcode)
 			else
 				reg.VX[0xF] = 0;
 			break;
+		}
 
 		// sub
 		case 5:
+		{
 			uint16_t res = reg.VX[x] - reg.VX[y];
 			if (reg.VX[x] > reg.VX[y])
 				reg.VX[0xF] = 1;
@@ -155,7 +159,8 @@ void CPU::dispatch(uint16_t& opcode)
 
 			reg.VX[x] = res;
 			break;
-
+		}
+		
 		// shr
 		case 6:
 			if (reg.VX[x] & 0x01) 	// lsb
@@ -168,6 +173,7 @@ void CPU::dispatch(uint16_t& opcode)
 		
 		// subn
 		case 7:
+		{
 			uint16_t res = reg.VX[y] - reg.VX[x];
 			if (reg.VX[x] < reg.VX[y])
 				reg.VX[0xF] = 1;
@@ -176,6 +182,7 @@ void CPU::dispatch(uint16_t& opcode)
 
 			reg.VX[x] = res;
 			break;
+		}
 
 		// shl
 		case 0xE:
@@ -211,11 +218,13 @@ void CPU::dispatch(uint16_t& opcode)
 	
 	// RND
 	case 0xC:
+	{
 		std::mt19937 mt{};
 		std::uniform_int_distribution randRange{ 0, 255 };
 		reg.VX[index] = static_cast<byte_t>(randRange(mt) & (opcode & 0x00FF));
 		break;
-
+	}
+	
 	// Display Dxyn
 	case 0xD: 
 	{

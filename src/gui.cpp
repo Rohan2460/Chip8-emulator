@@ -6,10 +6,9 @@
 SDL_Window* GUI::window = nullptr;
 SDL_Renderer* GUI::renderer = nullptr;
 SDL_Texture* GUI::texture = nullptr;
-uint32_t GUI::pixels[] {};
 
 
-int GUI::init(const char* title)
+int GUI::init(const char* title, uint16_t* video)
 {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
@@ -21,45 +20,55 @@ int GUI::init(const char* title)
         return 2;
     }
 
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, 64, 32);
+    pixels = video;
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA4444, SDL_TEXTUREACCESS_STREAMING, 64, 32);
     SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART);
     return 0;
 }
 
-void GUI::update(bool* video)
+void GUI::update()
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    // grid
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    
 
+    
+
+    // convert
+    // for (int i = 0; i < (64 * 32); i++)
+    // {
+    //     if (video[i])
+    //         pixels[i] = 0xFFFF;
+    //     else
+    //         pixels[i] = 0;
+    // }
+
+    // pixels[2047] = 0; // debug
+
+    // SDL_FRect area = {0, 0, 320, 160}; // scale
+    
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    
+    SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(uint16_t));
+    SDL_RenderTexture(renderer, texture, NULL, NULL);
+
+    
+
+    // grid
+    // SDL_SetRenderDrawColor(renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
     // for(int i = 0; i < WIDTH; i += pixelWidth)
     //     SDL_RenderLine(renderer, i, 0, i, HEIGHT);
         
     // for(int i = 0; i < HEIGHT; i += pixelHeight)
     //     SDL_RenderLine(renderer, 0, i, WIDTH, i);
 
-    for (int i = 0; i < (64 * 32); i++)
-    {
-        if (video[i])
-            pixels[i] = 0xFFFFFFFF;
-        else
-            pixels[i] = 0;
-    }
-
-    pixels[2047] = 0; // debug
-
-    SDL_FRect area = {0, 0, 320, 160}; // scale
-    
-    SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(uint32_t));
-    SDL_RenderTexture(renderer, texture, NULL, &area);
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderDebugText(renderer, 20, 10, "Test");
 
-    SDL_RenderPresent(renderer);
 
+    SDL_RenderPresent(renderer);
 }
 
 bool GUI::events()

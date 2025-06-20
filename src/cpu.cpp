@@ -21,9 +21,14 @@ void CPU::reset()
 	}
 
 	// Debug
-	memset(video, 1, sizeof(video));
-	memory[reg.PC] = 0x12;
-	memory[reg.PC + 1] = 0x00;
+	// memset(video, 0xFFFF, sizeof(video));
+	// memory[reg.PC] = 0x12;
+	// memory[reg.PC + 1] = 0x00;
+}
+
+void loadFont()
+{
+
 }
 
 void CPU::loadROM(char const* filename)
@@ -77,9 +82,9 @@ void CPU::cycle()
 
 void CPU::dispatch(uint16_t& opcode)
 {
-	int index = static_cast<int>((opcode >> 8) & 0x000F);
-	int x = index;
-	int y = static_cast<int>((opcode >> 4) & 0x000F);
+	const int index = static_cast<int>((opcode >> 8) & 0x000F);
+	const int& x = index;
+	const int y = static_cast<int>((opcode >> 4) & 0x000F);
 
 	// msb nibble
 	switch (static_cast<byte_t>(opcode >> 12))
@@ -261,31 +266,44 @@ void CPU::dispatch(uint16_t& opcode)
 	// Display Dxyn
 	case 0xD: 
 	{
-		int spriteLength = opcode & 0X000F;
-		byte_t sprite[spriteLength];
-		byte_t addr = reg.I;
+		int spriteHeight = opcode & 0X000F;
+		byte_t sprite[spriteHeight];
+		uint16_t addr = reg.I;
 		reg.VX[0xF] = 0;
 
 		// load sprite
-		for (int i = 0; i < spriteLength; i++)
+		for (int i = 0; i < spriteHeight; i++)
 		{
 			sprite[i] = memory[addr];
-			addr += 8;
+			addr += 1;
 		}
 
-		int screenIndex = 0;
-		int rowSelector = 0;
-		for (int i = 1; i <= spriteLength * 8; i++)
+
+		for (int i = 0; i < spriteHeight; i++)
 		{
-			if (i % 8 == 0)
-				rowSelector += 64;
+			byte_t spriteRow = sprite[i];
 
-			screenIndex = ((i - 1) + rowSelector) % 64;
-			if(video[screenIndex] == 1 && sprite[i - 1] == 1)
-				reg.VX[0xF] = 1;
-			video[screenIndex] ^= sprite[i - 1];
-			
+			int col = reg.VX[x];
+			int row = reg.VX[y];
+
+			for(int j = 0; j < 8; j++)
+			{
+				// multiply 64 by row index and add column index
+				byte_t spritePixel = spriteRow & (0x80 >> j);
+				uint16_t* screenPixel = &video[(64 * ((row + i) % 32)) + ((col + j) % 64)];
+				
+
+				if (spritePixel)
+				{
+					// collision
+					if (*screenPixel == 0xFFFF)
+						reg.VX[0xF] = 1;
+
+					*screenPixel ^= 0xFFFF;
+				}
+			}
 		}
+
 		break;
 	}
 		
@@ -301,7 +319,7 @@ void CPU::push(uint16_t item)
 	// reg.SP++;
 }
 
-bool* CPU::getVideo()
+uint16_t* CPU::getVideo()
 {
 	return video;
 }

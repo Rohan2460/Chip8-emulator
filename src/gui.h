@@ -8,7 +8,7 @@ class GUI
     static SDL_Window* window ;
     static SDL_Renderer* renderer;
     static SDL_Texture* texture;
-    static uint32_t pixels[64 * 32];
+    uint16_t* pixels;
 
     static constexpr int WIDTH {640};
     static constexpr int HEIGHT {320};
@@ -18,8 +18,8 @@ class GUI
 
 public:
     // GUI();
-    int init(const char* title);
-    void update(bool* video);
+    int init(const char* title, uint16_t* video);
+    void update();
     bool events();
     void quit();
 };

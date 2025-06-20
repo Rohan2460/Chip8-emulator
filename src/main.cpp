@@ -5,13 +5,13 @@ int main()
 {
     CPU cpu;
     cpu.reset();
-    // cpu.loadROM("/files/Projects/chip8/roms/ibm.ch8");
+    cpu.loadROM("/files/Projects/chip8/roms/test2");
     cpu.printReg();
-    bool* video = cpu.getVideo();
+    uint16_t* video = cpu.getVideo();
 
 
     GUI gui;
-    gui.init("Chip8");
+    gui.init("Chip8", video);
     bool quit {false};
 
     Uint32 frameStart = SDL_GetTicks();
@@ -27,9 +27,8 @@ int main()
             frameStart = currentTime;
             quit = gui.events();
 
-            // it a loop stupid , check thsi 
             cpu.cycle();
-            gui.update(video);
+            gui.update();
 
         }
     }

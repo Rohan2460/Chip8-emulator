@@ -6,4 +6,4 @@ build
 chip8
 
 vendored
-roms
+*.ch8

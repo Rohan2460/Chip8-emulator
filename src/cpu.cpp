@@ -2,6 +2,7 @@
 #include <cstring>
 #include <iostream>
 #include <random>
+#include <fstream>
 
 CPU::CPU()
 {
@@ -20,9 +21,32 @@ void CPU::reset()
 	}
 
 	// Debug
-	memory[reg.PC] = 0x00;
-	memory[reg.PC + 1] = 0xE0;
+	memset(video, 1, sizeof(video));
+	memory[reg.PC] = 0x12;
+	memory[reg.PC + 1] = 0x00;
+}
 
+void CPU::loadROM(char const* filename)
+{
+	std::ifstream file(filename, std::ios::binary | std::ios::ate);
+
+	if (file.is_open())
+	{
+		std::streampos size = file.tellg();
+		char* buffer = new char[size];
+		file.seekg(0, std::ios::beg);
+		file.read(buffer, size);
+		file.close();
+
+
+		for (long i = 0; i < size; ++i)
+		{
+			memory[0x200 + i] = buffer[i];
+		}
+
+		delete[] buffer;
+
+	}
 }
 
 void CPU::printReg()
@@ -46,6 +70,7 @@ void CPU::cycle()
 	uint16_t opcode = (memory[reg.PC] << 8) | memory[reg.PC + 1];
 	// decode and execute
 	dispatch(opcode);
+	reg.PC += 2;
 }
 
 // Instructions
@@ -62,20 +87,22 @@ void CPU::dispatch(uint16_t& opcode)
 
 	case 0:
 	{
-		switch (opcode & 0x000F)
+		switch (opcode & 0x00FF)
 		{
 		// CLS
-		case 0:
+		case 0xE0:
 			memset(video, 0, sizeof(video));
+			std::cout << "Cleared Screen \n";
 			break;
 		
 		// RET
-		case 0xE:
+		case 0xEE:
 			reg.PC = stack[reg.SP];
 			reg.SP--;
 			break;
 		
 		default:
+			std::cout << std::hex << opcode << " not implemented \n";
 			break;
 		}
 		break;
@@ -121,6 +148,11 @@ void CPU::dispatch(uint16_t& opcode)
 		// lsb nibble
 		switch (opcode & 0x000F)
 		{
+		// load
+		case 0:
+			reg.VX[x] = reg.VX[y];
+			break;
+
 		// or
 		case 1:
 			reg.VX[x] |= reg.VX[y];
@@ -196,6 +228,7 @@ void CPU::dispatch(uint16_t& opcode)
 
 			
 		default:
+			std::cout << std::hex << opcode << " not implemented \n";
 			break;
 		}
 		break;
@@ -240,27 +273,27 @@ void CPU::dispatch(uint16_t& opcode)
 			addr += 8;
 		}
 
-		for (int i = reg.VX[x]; i < reg.VX[x] + 8; i++)
+		int screenIndex = 0;
+		int rowSelector = 0;
+		for (int i = 1; i <= spriteLength * 8; i++)
 		{
-			int index = 0;
-			for (int j = reg.VX[y]; j < reg.VX[y] + spriteLength; j++)
-			{
-				if (video[j % 32][i % 64] == 1 and sprite[index + (8 * i)])
-					reg.VX[0xF] = 1;
-				
-				video[j % 32][i % 64] ^= sprite[j + (8 * i)];
-				index++;
-			}
+			if (i % 8 == 0)
+				rowSelector += 64;
+
+			screenIndex = ((i - 1) + rowSelector) % 64;
+			if(video[screenIndex] == 1 && sprite[i - 1] == 1)
+				reg.VX[0xF] = 1;
+			video[screenIndex] ^= sprite[i - 1];
+			
 		}
-		
 		break;
 	}
 		
 	default:
+		std::cout << std::hex << opcode << " not implemented \n";
 		break;
 	}
 }
-
 
 void CPU::push(uint16_t item)
 {
@@ -268,3 +301,7 @@ void CPU::push(uint16_t item)
 	// reg.SP++;
 }
 
+bool* CPU::getVideo()
+{
+	return video;
+}

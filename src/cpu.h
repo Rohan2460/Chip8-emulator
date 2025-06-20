@@ -5,7 +5,7 @@ class CPU
 {
 	using byte_t = uint8_t; 
 	
-	bool video[64][32];
+	bool video[64 * 32];
 	byte_t memory[4096];
 	uint16_t stack[16];
 
@@ -25,4 +25,6 @@ public:
 	void cycle();
 	void dispatch(uint16_t& opcode);
 	void push(uint16_t item);
+	bool* getVideo();
+	void loadROM(char const* filename);
 };

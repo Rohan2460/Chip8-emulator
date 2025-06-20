@@ -5,8 +5,10 @@
 
 class GUI
 {
-    static SDL_Window *window ;
-    static SDL_Renderer *renderer;
+    static SDL_Window* window ;
+    static SDL_Renderer* renderer;
+    static SDL_Texture* texture;
+    static uint32_t pixels[64 * 32];
 
     static constexpr int WIDTH {640};
     static constexpr int HEIGHT {320};
@@ -17,7 +19,7 @@ class GUI
 public:
     // GUI();
     int init(const char* title);
-    void update();
+    void update(bool* video);
     bool events();
     void quit();
 };

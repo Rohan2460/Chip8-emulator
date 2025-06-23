@@ -5,17 +5,14 @@ int main()
 {
     CPU cpu;
     cpu.reset();
-    cpu.loadROM("/files/Projects/chip8/roms/test2");
+    cpu.loadROM("/files/Projects/chip8/roms/ibm");
     cpu.printReg();
     uint16_t* video = cpu.getVideo();
-
 
     GUI gui;
     gui.init("Chip8", video);
     bool quit {false};
-
     Uint32 frameStart = SDL_GetTicks();
-    
 
     while (!quit)
     {
@@ -28,8 +25,7 @@ int main()
             quit = gui.events();
 
             cpu.cycle();
-            gui.update();
-
+            gui.update(&cpu.videoUpdated);
         }
     }
 

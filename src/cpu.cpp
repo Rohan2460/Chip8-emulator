@@ -1,8 +1,11 @@
 #include "cpu.h"
+#include "gui.h"
 #include <cstring>
 #include <iostream>
 #include <random>
 #include <fstream>
+
+bool CPU::videoUpdated { true };
 
 CPU::CPU()
 {
@@ -15,20 +18,23 @@ void CPU::reset()
 	reg.PC = 0x200;
 	reg.I = 0;
 
-	for(int i {0}; i < 16; i++)
-	{
-		reg.VX[i] = 0;
-	}
+	memset(stack, 0, sizeof(stack));
+	memset(reg.VX, 0, sizeof(reg.VX));
+
+	loadFonts();
 
 	// Debug
-	// memset(video, 0xFFFF, sizeof(video));
+	memset(video, 0xFFFF, sizeof(video));
 	// memory[reg.PC] = 0x12;
 	// memory[reg.PC + 1] = 0x00;
 }
 
-void loadFont()
+void CPU::loadFonts()
 {
-
+	for(int i = 0; i < FONTSET_SIZE; i++)
+	{
+		memory[FONT_START_ADDR + i] = fontset[i];
+	}
 }
 
 void CPU::loadROM(char const* filename)
@@ -98,6 +104,7 @@ void CPU::dispatch(uint16_t& opcode)
 		case 0xE0:
 			memset(video, 0, sizeof(video));
 			std::cout << "Cleared Screen \n";
+			videoUpdated = true;
 			break;
 		
 		// RET
@@ -266,6 +273,7 @@ void CPU::dispatch(uint16_t& opcode)
 	// Display Dxyn
 	case 0xD: 
 	{
+		videoUpdated = true;
 		int spriteHeight = opcode & 0X000F;
 		byte_t sprite[spriteHeight];
 		uint16_t addr = reg.I;
@@ -306,7 +314,11 @@ void CPU::dispatch(uint16_t& opcode)
 
 		break;
 	}
-		
+	
+	// 0xEx not implemented
+
+	
+	
 	default:
 		std::cout << std::hex << opcode << " not implemented \n";
 		break;

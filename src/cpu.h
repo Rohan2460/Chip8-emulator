@@ -41,18 +41,24 @@ class CPU
 		byte_t   SP; 
 		uint16_t PC; 
 		uint16_t I; // address register
+		byte_t 	 DT; // delay
+		byte_t 	 ST; // sound
+
 	} reg;
 	
 	void dispatch(uint16_t& opcode);
 	void push(uint16_t item);
 	void loadFonts();
+	bool* keys;
 
 public:
 	CPU();
+	// void init(char const* rom_path, bool* keys);
 	void reset();
 	void printReg();
 	void cycle();
 	void loadROM(char const* filename);
+	void setKeys(bool* keys);
 	uint16_t* getVideo();
 	static bool videoUpdated;
 };

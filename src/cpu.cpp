@@ -20,13 +20,16 @@ void CPU::reset()
 
 	memset(stack, 0, sizeof(stack));
 	memset(reg.VX, 0, sizeof(reg.VX));
+	memset(video, 0, sizeof(video));
+
 
 	loadFonts();
 
 	// Debug
-	memset(video, 0xFFFF, sizeof(video));
-	// memory[reg.PC] = 0x12;
-	// memory[reg.PC + 1] = 0x00;
+	// memset(video, 0xFFFF, sizeof(video));
+	// memory[reg.PC] = 0xF0;
+	// memory[reg.PC + 1] = 0x0A;
+	
 }
 
 void CPU::loadFonts()
@@ -60,6 +63,11 @@ void CPU::loadROM(char const* filename)
 	}
 }
 
+void CPU::setKeys(bool* keyPtr)
+{
+	keys = keyPtr;
+}
+
 void CPU::printReg()
 {
 	using std::cout;
@@ -80,8 +88,9 @@ void CPU::cycle()
 	// fetch
 	uint16_t opcode = (memory[reg.PC] << 8) | memory[reg.PC + 1];
 	// decode and execute
+	reg.PC += 2; 
 	dispatch(opcode);
-	reg.PC += 2;
+	// pc ++ seems to mess with jump ins , idk ???
 }
 
 // Instructions
@@ -122,6 +131,7 @@ void CPU::dispatch(uint16_t& opcode)
 	// jump
 	case 1:
 		reg.PC = opcode & 0x0FFF;
+		// reg.PC -= 2; // compenstaion
 		break;
 	
 	// call
@@ -129,6 +139,7 @@ void CPU::dispatch(uint16_t& opcode)
 		reg.SP++;
 		push(reg.PC);
 		reg.PC = opcode & 0x0FFF;
+		// reg.PC -= 2;
 		break;
 
 	case 3:
@@ -259,6 +270,7 @@ void CPU::dispatch(uint16_t& opcode)
 	// jump
 	case 0xB:
 		reg.PC = (opcode & 0x0FFF) + reg.VX[0];
+		// reg.PC -= 2;
 		break;
 	
 	// RND
@@ -315,9 +327,95 @@ void CPU::dispatch(uint16_t& opcode)
 		break;
 	}
 	
-	// 0xEx not implemented
+	case 0xE:
+	{
+		switch (opcode & 0x00FF)
+		{
+		case 0x9E:
+			if (keys[reg.VX[index]])
+				reg.PC += 2;
+			break;
 
-	
+		case 0xA1:
+			if (!keys[reg.VX[index]])
+				reg.PC += 2;
+			break;
+		
+		default:
+			break;
+		}
+		break;
+	}
+
+	case 0xF:
+	{
+		switch (opcode & 0x00FF)
+		{
+		case 0x07:
+			reg.VX[index] = reg.DT;
+			break;
+
+		case 0x0A:
+		{
+			byte_t key = waitAndGetKey();
+			reg.VX[index] = key;
+			break;
+		}
+
+		case 0x15:
+			reg.DT = reg.VX[index];
+			break;
+
+		case 0x18:
+			reg.ST = reg.VX[index];
+			break;
+
+		case 0x1E:
+			reg.I += reg.VX[index];
+			break;
+
+		case 0x29:
+			reg.I = (reg.VX[index] * 5) + FONT_START_ADDR;
+			break;
+
+		case 0x33:
+		{
+			byte_t val = static_cast<byte_t>(reg.VX[index]);
+			memory[reg.I] = val % 10;
+			val /= 10;
+
+			memory[reg.I + 1] = val % 10;
+			val /= 10;
+
+			memory[reg.I + 2] = val % 10;
+			val /= 10;
+			break;
+		}
+
+		case 0x55:
+		{
+			for (int i = 0; i <= index; i++)
+			{
+				memory[reg.I + i] = reg.VX[i];
+			}
+			break;
+		}
+
+		case 0x65:
+		{
+			for (int i = 0; i <= index; i++)
+			{
+				reg.VX[i] = memory[reg.I + i];
+			}
+			break;
+		}
+
+		default:
+			std::cout << std::hex << opcode << " not implemented \n";
+			break;
+		}
+		break;
+	}
 	
 	default:
 		std::cout << std::hex << opcode << " not implemented \n";

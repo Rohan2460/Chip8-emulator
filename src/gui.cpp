@@ -6,6 +6,7 @@
 SDL_Window* GUI::window = nullptr;
 SDL_Renderer* GUI::renderer = nullptr;
 SDL_Texture* GUI::texture = nullptr;
+bool GUI::keys[16] {false};
 
 
 int GUI::init(const char* title, uint16_t* video)
@@ -67,67 +68,67 @@ bool GUI::events()
             switch (event.key.key)
             {
             case SDLK_0:
-                key[0] = e;
+                keys[0] = e;
                 break;
             
             case SDLK_1:
-                key[1] = e;
+                keys[1] = e;
                 break;
             
             case SDLK_2:
-                key[2] = e;
+                keys[2] = e;
                 break;
 
             case SDLK_3:
-                key[3] = e;
+                keys[3] = e;
                 break;
 
             case SDLK_4:
-                key[4] = e;
+                keys[4] = e;
                 break;
 
             case SDLK_5:
-                key[5] = e;
+                keys[5] = e;
                 break;
 
             case SDLK_6:
-                key[6] = e;
+                keys[6] = e;
                 break;
 
             case SDLK_7:
-                key[7] = e;
+                keys[7] = e;
                 break;
 
             case SDLK_8:
-                key[8] = e;
+                keys[8] = e;
                 break;
             
             case SDLK_9:
-                key[9] = e;
+                keys[9] = e;
                 break;
 
             case SDLK_A:
-                key[10] = e;
+                keys[10] = e;
                 break;
 
             case SDLK_B:
-                key[11] = e;
+                keys[11] = e;
                 break;
 
             case SDLK_C:
-                key[12] = e;
+                keys[12] = e;
                 break;
             
             case SDLK_D:
-                key[13] = e;
+                keys[13] = e;
                 break;
 
             case SDLK_E:
-                key[14] = e;
+                keys[14] = e;
                 break;
 
             case SDLK_F:
-                key[15] = e;
+                keys[15] = e;
                 break;
 
             default:
@@ -151,4 +152,30 @@ const char* getHex(const char* label, T val)
     static char buffer[32];
     std::snprintf(buffer, sizeof(buffer), "%s: 0x%X", label, val);
     return buffer;
+}
+
+bool* GUI::getKeys()
+{
+    return keys;
+}
+
+byte_t waitAndGetKey()
+{
+    SDL_Event event;
+    SDL_Keycode key;
+    bool exit { false };
+
+    while(true)
+    {
+        SDL_WaitEvent(&event);
+        if( event.type == SDL_EVENT_KEY_DOWN)
+        {
+            key = event.key.key;
+            if (key >= 0x61 && key <= 0x66)
+                return key - 87;
+            else if (key >= 0x30 && key <= 0x39)
+                return key - 48;
+        }    
+    }
+    // maybe flush events ??
 }

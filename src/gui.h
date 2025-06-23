@@ -15,6 +15,7 @@ inline constexpr int pixelHeight { WINDOW_HEIGHT / 32 };
 
 template <typename T>
 const char* getHex(const char* label, T val);
+byte_t waitAndGetKey();
 
 class GUI
 {
@@ -25,9 +26,10 @@ class GUI
 
 public:
     // GUI();
-    bool key[16] {false};
+    static bool keys[16];
     int init(const char* title, uint16_t* video);
     void update(bool* videoUpdated);
     bool events();
     void quit();
+    bool* getKeys();
 };

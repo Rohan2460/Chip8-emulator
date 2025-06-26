@@ -28,6 +28,23 @@ inline const byte_t fontset[FONTSET_SIZE] =
 
 byte_t randGen();
 
+struct Registers
+{
+    byte_t   VX[16]; // V0 - VF
+    byte_t   SP; 
+    uint16_t PC; 
+    uint16_t I; // address register
+    byte_t 	 DT; // delay
+    byte_t 	 ST; // sound
+
+};
+
+struct CpuData
+{
+    const Registers* reg;
+    const uint16_t* stack;
+    const byte_t* memory;
+};
 
 class CPU
 {
@@ -36,16 +53,7 @@ class CPU
     byte_t memory[4096];
     uint16_t stack[16];
 
-    struct Registers
-    {
-        byte_t   VX[16]; // V0 - VF
-        byte_t   SP; 
-        uint16_t PC; 
-        uint16_t I; // address register
-        byte_t 	 DT; // delay
-        byte_t 	 ST; // sound
-
-    } reg;
+    Registers reg;
     
     void dispatch(uint16_t& opcode);
     void loadFonts();
@@ -60,6 +68,7 @@ public:
     void cycle();
     void loadROM(char const* filename);
     uint16_t* getVideo();
+    const CpuData* getRegisters() const;
 
     static bool videoUpdated;
     static int resetKey;

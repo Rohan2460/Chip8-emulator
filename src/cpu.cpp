@@ -439,6 +439,12 @@ uint16_t *CPU::getVideo()
     return video;
 }
 
+const CpuData* CPU::getRegisters() const
+{
+    static const CpuData regData = {.reg = &reg, .stack = stack, .memory = memory};
+    return &regData;
+}
+
 byte_t randGen()
 {
     static std::random_device rd;

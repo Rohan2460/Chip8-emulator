@@ -29,8 +29,8 @@ int GUI::init(const char* title, uint16_t* video)
 
 void GUI::update(bool* videoUpdated)
 {
-    if (!*videoUpdated)
-        return;
+    // if (!*videoUpdated)
+    //     return;
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);

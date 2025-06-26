@@ -4,19 +4,20 @@
 int main()
 {
     CPU cpu;
-    cpu.reset();
+    GUI gui;
+    cpu.init(gui.getKeys(), true);
+
     // cpu.loadROM("/files/Projects/chip8/roms/test_opcode.ch8");
     // cpu.loadROM("/files/Projects/chip8/roms/3-corax+.ch8");
-    // cpu.loadROM("/files/Projects/chip8/roms/6-keypad.ch8");
+    cpu.loadROM("/files/Projects/chip8/roms/6-keypad.ch8");
     // cpu.loadROM("/files/Projects/chip8/roms/8-scrolling.ch8");
     // cpu.loadROM("/files/Projects/chip8/roms/4-flags.ch8");
     // cpu.loadROM("/files/Projects/chip8/roms/5-quirks.ch8");
+
     cpu.printReg();
     uint16_t* video = cpu.getVideo();
-
-    GUI gui;
     gui.init("Chip8", video);
-    cpu.setKeys(gui.getKeys());
+    
     bool quit {false};
     Uint32 frameStart = SDL_GetTicks();
 

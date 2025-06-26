@@ -7,8 +7,8 @@
 inline constexpr int SCREEN_WIDTH { 640 };
 inline constexpr int SCREEN_HEIGHT { 320 };
 
-inline constexpr int WINDOW_WIDTH { SCREEN_WIDTH };
-inline constexpr int WINDOW_HEIGHT { SCREEN_HEIGHT };
+inline constexpr int WINDOW_WIDTH { SCREEN_WIDTH + 100 };
+inline constexpr int WINDOW_HEIGHT { SCREEN_HEIGHT + 60};
 
 inline constexpr int pixelWidth { WINDOW_WIDTH / 64 };
 inline constexpr int pixelHeight { WINDOW_HEIGHT / 32 };
@@ -23,6 +23,7 @@ class GUI
     static SDL_Renderer* renderer;
     static SDL_Texture* texture;
     uint16_t* pixels;
+    const SDL_FRect screenRenderArea = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT}; 
 
 public:
     // GUI();

@@ -6,11 +6,15 @@
 #include <fstream>
 
 bool CPU::videoUpdated{true};
-int CPU::resetKey{16};
 
-CPU::CPU()
+void CPU::init(bool* keys, bool debug = false)
 {
     reset();
+    loadFonts();
+    setKeys(keys);
+
+    if (debug)
+        memset(video, 0xFFFF, sizeof(video)); // White screen
 }
 
 void CPU::reset()
@@ -23,10 +27,7 @@ void CPU::reset()
     memset(reg.VX, 0, sizeof(reg.VX));
     memset(video, 0, sizeof(video));
 
-    loadFonts();
-
     // Debug
-    // memset(video, 0xFFFF, sizeof(video));
     // memory[reg.PC] = 0xF0;
     // memory[reg.PC + 1] = 0x0A;
 }
@@ -89,9 +90,7 @@ void CPU::printReg()
 
 void CPU::cycle()
 {
-    // fetch
     uint16_t opcode = (memory[reg.PC] << 8) | memory[reg.PC + 1];
-    // decode and execute
     reg.PC += 2;
     dispatch(opcode);
     handleTimers();
@@ -116,7 +115,6 @@ void CPU::dispatch(uint16_t &opcode)
         // CLS
         case 0xE0:
             memset(video, 0, sizeof(video));
-            std::cout << "Cleared Screen \n";
             videoUpdated = true;
             break;
 
@@ -127,7 +125,7 @@ void CPU::dispatch(uint16_t &opcode)
             break;
 
         default:
-            std::cout << std::hex << opcode << " not implemented \n";
+            invalidOpcode(opcode);
             break;
         }
         break;
@@ -140,7 +138,7 @@ void CPU::dispatch(uint16_t &opcode)
     // call
     case 2:
         reg.SP++;
-        push(reg.PC);
+        stack[reg.SP] = reg.PC;
         reg.PC = opcode & 0x0FFF;
         break;
 
@@ -254,7 +252,7 @@ void CPU::dispatch(uint16_t &opcode)
             break;
 
         default:
-            std::cout << std::hex << opcode << " not implemented \n";
+            invalidOpcode(opcode);
             break;
         }
         break;
@@ -303,7 +301,6 @@ void CPU::dispatch(uint16_t &opcode)
         for (int i = 0; i < spriteHeight; i++)
         {
             byte_t spriteRow = sprite[i];
-
             int col = reg.VX[x];
             int row = reg.VX[y];
 
@@ -341,7 +338,7 @@ void CPU::dispatch(uint16_t &opcode)
         }
 
         case 0xA1:
-        { 
+        {
             if (!keys[reg.VX[index]])
             {
                 reg.PC += 2;
@@ -350,10 +347,9 @@ void CPU::dispatch(uint16_t &opcode)
         }
 
         default:
-            std::cout << std::hex << opcode << " not implemented \n";
+            invalidOpcode(opcode);
             break;
         }
-        
         break;
     }
 
@@ -421,22 +417,21 @@ void CPU::dispatch(uint16_t &opcode)
         }
 
         default:
-            std::cout << std::hex << opcode << " not implemented \n";
+            invalidOpcode(opcode);
             break;
         }
         break;
     }
 
     default:
-        std::cout << std::hex << opcode << " not implemented \n";
+        invalidOpcode(opcode);
         break;
     }
 }
 
-void CPU::push(uint16_t item)
+void CPU::invalidOpcode(uint16_t& opcode)
 {
-    stack[reg.SP] = item;
-    // reg.SP += 1;
+    std::cout << "Invalid opcode: " << std::hex << opcode << "\n";
 }
 
 uint16_t *CPU::getVideo()
@@ -451,5 +446,4 @@ byte_t randGen()
     std::uniform_int_distribution<> distr(0, 255);
 
     return distr(gen);
-
 }

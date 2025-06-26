@@ -6,7 +6,6 @@ using byte_t = uint8_t;
 inline constexpr uint16_t ROM_START_ADDR { 0X200 };
 inline constexpr uint16_t FONT_START_ADDR { 0 }; 
 inline constexpr int FONTSET_SIZE { 80 }; 
-
 inline const byte_t fontset[FONTSET_SIZE] =
     {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -32,7 +31,7 @@ byte_t randGen();
 
 class CPU
 {
-
+    bool* keys;
     uint16_t video[64 * 32];
     byte_t memory[4096];
     uint16_t stack[16];
@@ -49,20 +48,19 @@ class CPU
     } reg;
     
     void dispatch(uint16_t& opcode);
-    void push(uint16_t item);
     void loadFonts();
     void handleTimers();
-    bool* keys;
+    void setKeys(bool* keys);
+    void invalidOpcode(uint16_t& opcode);
 
 public:
-    CPU();
-    // void init(char const* rom_path, bool* keys);
+    void init(bool* keys, bool debug);
     void reset();
     void printReg();
     void cycle();
     void loadROM(char const* filename);
-    void setKeys(bool* keys);
     uint16_t* getVideo();
+
     static bool videoUpdated;
     static int resetKey;
 };

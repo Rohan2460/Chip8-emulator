@@ -34,18 +34,14 @@ void GUI::update(bool* videoUpdated)
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
-
-    // pixels[2047] = 0; // debug
-
-    SDL_FRect area = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT}; // scale
     
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
     
     SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(uint16_t));
-    SDL_RenderTexture(renderer, texture, NULL, &area);
+    SDL_RenderTexture(renderer, texture, NULL, &screenRenderArea);
 
     // SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-    // SDL_RenderDebugText(renderer, SCREEN_WIDTH, 10, "Test");
+    SDL_RenderDebugText(renderer, SCREEN_WIDTH + 10, 10, getHex("Test", 1515) );
 
     SDL_RenderPresent(renderer);
 }
@@ -163,19 +159,23 @@ byte_t waitAndGetKey()
 {
     SDL_Event event;
     SDL_Keycode key;
+    byte_t result;
     bool exit { false };
 
     while(true)
     {
         SDL_WaitEvent(&event);
-        if( event.type == SDL_EVENT_KEY_DOWN)
+        if(event.type == SDL_EVENT_KEY_DOWN)
         {
             key = event.key.key;
             if (key >= 0x61 && key <= 0x66)
-                return key - 87;
+                result = key - 87;
             else if (key >= 0x30 && key <= 0x39)
-                return key - 48;
-        }    
+                result = key - 48;
+        }
+        else if (event.type == SDL_EVENT_KEY_UP)
+        {
+            return result;
+        }
     }
-    // maybe flush events ??
 }

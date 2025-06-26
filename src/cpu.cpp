@@ -5,7 +5,8 @@
 #include <random>
 #include <fstream>
 
-bool CPU::videoUpdated { true };
+bool CPU::videoUpdated{true};
+int CPU::resetKey{16};
 
 CPU::CPU()
 {
@@ -22,36 +23,33 @@ void CPU::reset()
     memset(reg.VX, 0, sizeof(reg.VX));
     memset(video, 0, sizeof(video));
 
-
     loadFonts();
 
     // Debug
     // memset(video, 0xFFFF, sizeof(video));
     // memory[reg.PC] = 0xF0;
     // memory[reg.PC + 1] = 0x0A;
-    
 }
 
 void CPU::loadFonts()
 {
-    for(int i = 0; i < FONTSET_SIZE; i++)
+    for (int i = 0; i < FONTSET_SIZE; i++)
     {
         memory[FONT_START_ADDR + i] = fontset[i];
     }
 }
 
-void CPU::loadROM(char const* filename)
+void CPU::loadROM(char const *filename)
 {
     std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
     if (file.is_open())
     {
         std::streampos size = file.tellg();
-        char* buffer = new char[size];
+        char *buffer = new char[size];
         file.seekg(0, std::ios::beg);
         file.read(buffer, size);
         file.close();
-
 
         for (long i = 0; i < size; ++i)
         {
@@ -59,13 +57,20 @@ void CPU::loadROM(char const* filename)
         }
 
         delete[] buffer;
-
     }
 }
 
-void CPU::setKeys(bool* keyPtr)
+void CPU::setKeys(bool *keyPtr)
 {
     keys = keyPtr;
+}
+
+void CPU::handleTimers()
+{
+    if (reg.DT > 0)
+        reg.DT--;
+    if (reg.ST > 0)
+        reg.ST--;
 }
 
 void CPU::printReg()
@@ -73,14 +78,13 @@ void CPU::printReg()
     using std::cout;
     cout << "SP: " << std::hex << +reg.SP << "\n";
     cout << "PC: " << std::hex << +reg.PC << "\n";
-    cout << "I: "  << std::hex << +reg.I  << "\n";
+    cout << "I: " << std::hex << +reg.I << "\n";
 
-    for(int i {0}; i < 16; i++)
+    for (int i{0}; i < 16; i++)
     {
         cout << "V" << i << ": " << std::hex << +reg.VX[i] << " | ";
     }
     cout << "\n";
-
 }
 
 void CPU::cycle()
@@ -88,17 +92,17 @@ void CPU::cycle()
     // fetch
     uint16_t opcode = (memory[reg.PC] << 8) | memory[reg.PC + 1];
     // decode and execute
-    reg.PC += 2; 
+    reg.PC += 2;
     dispatch(opcode);
-    // pc ++ seems to mess with jump ins , idk ???
+    handleTimers();
 }
 
 // Instructions
 
-void CPU::dispatch(uint16_t& opcode)
+void CPU::dispatch(uint16_t &opcode)
 {
     const int index = static_cast<int>((opcode >> 8) & 0x000F);
-    const int& x = index;
+    const int &x = index;
     const int y = static_cast<int>((opcode >> 4) & 0x000F);
 
     // msb nibble
@@ -115,13 +119,13 @@ void CPU::dispatch(uint16_t& opcode)
             std::cout << "Cleared Screen \n";
             videoUpdated = true;
             break;
-        
+
         // RET
         case 0xEE:
             reg.PC = stack[reg.SP];
             reg.SP--;
             break;
-        
+
         default:
             std::cout << std::hex << opcode << " not implemented \n";
             break;
@@ -131,24 +135,22 @@ void CPU::dispatch(uint16_t& opcode)
     // jump
     case 1:
         reg.PC = opcode & 0x0FFF;
-        // reg.PC -= 2; // compenstaion
         break;
-    
+
     // call
     case 2:
         reg.SP++;
         push(reg.PC);
         reg.PC = opcode & 0x0FFF;
-        // reg.PC -= 2;
         break;
 
     case 3:
-        if (reg.VX[index] == opcode & 0x00FF)
+        if (reg.VX[index] == (opcode & 0x00FF))
             reg.PC += 2;
         break;
 
     case 4:
-        if (reg.VX[index] != opcode & 0x00FF)
+        if (reg.VX[index] != (opcode & 0x00FF))
             reg.PC += 2;
         break;
 
@@ -160,7 +162,7 @@ void CPU::dispatch(uint16_t& opcode)
     case 6:
         reg.VX[index] = opcode & 0x00FF;
         break;
-    
+
     // add
     case 7:
         reg.VX[index] += opcode & 0x00FF;
@@ -168,6 +170,9 @@ void CPU::dispatch(uint16_t& opcode)
 
     case 8:
     {
+        const byte_t vx = reg.VX[x];
+        const byte_t vy = reg.VX[y];
+
         // lsb nibble
         switch (opcode & 0x000F)
         {
@@ -180,7 +185,7 @@ void CPU::dispatch(uint16_t& opcode)
         case 1:
             reg.VX[x] |= reg.VX[y];
             break;
-        
+
         // and
         case 2:
             reg.VX[x] &= reg.VX[y];
@@ -191,11 +196,12 @@ void CPU::dispatch(uint16_t& opcode)
             reg.VX[x] ^= reg.VX[y];
             break;
 
-        // add 
+        // add
         case 4:
         {
             uint16_t res = reg.VX[x] + reg.VX[y];
             reg.VX[x] = res;
+
             if (res > 0xFF)
                 reg.VX[0xF] = 1;
             else
@@ -206,84 +212,80 @@ void CPU::dispatch(uint16_t& opcode)
         // sub
         case 5:
         {
-            uint16_t res = reg.VX[x] - reg.VX[y];
-            if (reg.VX[x] > reg.VX[y])
+            reg.VX[x] = vx - vy;
+            
+            if (vx >= vy)
                 reg.VX[0xF] = 1;
             else
                 reg.VX[0xF] = 0;
-
-            reg.VX[x] = res;
             break;
         }
-        
+
         // shr
         case 6:
-            if (reg.VX[x] & 0x01) 	// lsb
+            reg.VX[x] = vx >> 1;
+
+            if (vx & 0x01) // lsb
                 reg.VX[0xF] = 1;
             else
                 reg.VX[0xF] = 0;
-
-            reg.VX[x] = reg.VX[x] >> 1;
             break;
-        
+
         // subn
         case 7:
         {
-            uint16_t res = reg.VX[y] - reg.VX[x];
-            if (reg.VX[x] < reg.VX[y])
+            reg.VX[x] = vy - vx;
+
+            if (vx <= vy)
                 reg.VX[0xF] = 1;
             else
                 reg.VX[0xF] = 0;
-
-            reg.VX[x] = res;
             break;
         }
 
         // shl
         case 0xE:
-            if (reg.VX[x] & 0x80) 	// msb, mask 0x80 = 0b10000000
+            reg.VX[x] = vx << 1;
+
+            if (vx & 0x80) // msb, mask 0x80 = 0b10000000
                 reg.VX[0xF] = 1;
             else
                 reg.VX[0xF] = 0;
-
-            reg.VX[x] = reg.VX[x] << 1;
             break;
 
-            
         default:
             std::cout << std::hex << opcode << " not implemented \n";
             break;
         }
         break;
     }
+    
     // 9xy0
     case 9:
-        if(reg.VX[x] != reg.VX[y])
+        if (reg.VX[x] != reg.VX[y])
             reg.PC += 2;
         break;
-    
+
     // load
     case 0xA:
         reg.I = opcode & 0x0FFF;
         break;
-        
+
     // jump
     case 0xB:
         reg.PC = (opcode & 0x0FFF) + reg.VX[0];
-        // reg.PC -= 2;
         break;
-    
+
     // RND
     case 0xC:
     {
-        std::mt19937 mt{};
-        std::uniform_int_distribution randRange{ 0, 255 };
-        reg.VX[index] = static_cast<byte_t>(randRange(mt) & (opcode & 0x00FF));
+        byte_t rnd = randGen();
+        reg.VX[index] = rnd & (opcode & 0x00FF);
         break;
     }
-    
+
     // Display Dxyn
-    case 0xD: 
+    case 0xD:
     {
         videoUpdated = true;
         int spriteHeight = opcode & 0X000F;
@@ -298,7 +300,6 @@ void CPU::dispatch(uint16_t& opcode)
             addr += 1;
         }
 
-
         for (int i = 0; i < spriteHeight; i++)
         {
             byte_t spriteRow = sprite[i];
@@ -306,12 +307,11 @@ void CPU::dispatch(uint16_t& opcode)
             int col = reg.VX[x];
             int row = reg.VX[y];
 
-            for(int j = 0; j < 8; j++)
+            for (int j = 0; j < 8; j++)
             {
                 // multiply 64 by row index and add column index
                 byte_t spritePixel = spriteRow & (0x80 >> j);
-                uint16_t* screenPixel = &video[(64 * ((row + i) % 32)) + ((col + j) % 64)];
-                
+                uint16_t *screenPixel = &video[(64 * ((row + i) % 32)) + ((col + j) % 64)];
 
                 if (spritePixel)
                 {
@@ -323,27 +323,37 @@ void CPU::dispatch(uint16_t& opcode)
                 }
             }
         }
-
         break;
     }
-    
+
     case 0xE:
     {
         switch (opcode & 0x00FF)
         {
         case 0x9E:
+        {
             if (keys[reg.VX[index]])
+            {
                 reg.PC += 2;
-            break;
-
-        case 0xA1:
-            if (!keys[reg.VX[index]])
-                reg.PC += 2;
-            break;
-        
-        default:
+                // resetKey = reg.VX[index];
+            }
             break;
         }
+
+        case 0xA1:
+        { 
+            if (!keys[reg.VX[index]])
+            {
+                reg.PC += 2;
+            }
+            break;
+        }
+
+        default:
+            std::cout << std::hex << opcode << " not implemented \n";
+            break;
+        }
+        
         break;
     }
 
@@ -381,13 +391,13 @@ void CPU::dispatch(uint16_t& opcode)
         case 0x33:
         {
             byte_t val = static_cast<byte_t>(reg.VX[index]);
-            memory[reg.I] = val % 10;
+            memory[reg.I + 2] = val % 10;
             val /= 10;
 
             memory[reg.I + 1] = val % 10;
             val /= 10;
 
-            memory[reg.I + 2] = val % 10;
+            memory[reg.I] = val % 10;
             val /= 10;
             break;
         }
@@ -416,7 +426,7 @@ void CPU::dispatch(uint16_t& opcode)
         }
         break;
     }
-    
+
     default:
         std::cout << std::hex << opcode << " not implemented \n";
         break;
@@ -426,10 +436,20 @@ void CPU::dispatch(uint16_t& opcode)
 void CPU::push(uint16_t item)
 {
     stack[reg.SP] = item;
-    // reg.SP++;
+    // reg.SP += 1;
 }
 
-uint16_t* CPU::getVideo()
+uint16_t *CPU::getVideo()
 {
     return video;
+}
+
+byte_t randGen()
+{
+    static std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distr(0, 255);
+
+    return distr(gen);
+
 }

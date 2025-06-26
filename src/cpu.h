@@ -27,6 +27,8 @@ inline const byte_t fontset[FONTSET_SIZE] =
         0xF0, 0x80, 0xF0, 0x80, 0x80  // F
     };
 
+byte_t randGen();
+
 
 class CPU
 {
@@ -49,6 +51,7 @@ class CPU
     void dispatch(uint16_t& opcode);
     void push(uint16_t item);
     void loadFonts();
+    void handleTimers();
     bool* keys;
 
 public:
@@ -61,4 +64,5 @@ public:
     void setKeys(bool* keys);
     uint16_t* getVideo();
     static bool videoUpdated;
+    static int resetKey;
 };

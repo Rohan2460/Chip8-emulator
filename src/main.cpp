@@ -13,7 +13,7 @@ int main()
     // cpu.loadROM("/files/Projects/chip8/roms/8-scrolling.ch8");
     // cpu.loadROM("/files/Projects/chip8/roms/4-flags.ch8");
     // cpu.loadROM("/files/Projects/chip8/roms/5-quirks.ch8");
-    cpu.loadROM("/files/Projects/chip8/roms/spacejam.ch8");
+    cpu.loadROM("/files/Projects/chip8/roms/br8kout.ch8");
 
     cpu.printReg();
     uint16_t* video = cpu.getVideo();
@@ -23,8 +23,8 @@ int main()
     bool quit {false};
     Uint32 frameStart = SDL_GetTicks();
     
-    const int cyclesPerFrame = 100;
-    const int targetFPS = 30;
+    const int cyclesPerFrame = 10;
+    const int targetFPS = 60;
     const int frameDelay = 1000 / targetFPS;
 
     while (!quit)
